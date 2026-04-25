@@ -1,0 +1,30 @@
+To replicate the current ML service on Replit, you can use the following comprehensive prompt. This prompt is designed for the Replit Agent (or a new Python Repl) to recreate the Flask-based financial analysis service with all the recent fixes and enhancements.
+
+Replit Rebuild Prompt
+text
+
+
+
+Create a Python Flask web service for financial document analysis and forecasting. Tech Stack:- Python 3.10+- Flask with CORS enabled- Pandas and Numpy for data processing- pypdf for PDF text extraction- scikit-learn and statsmodels for forecasting- requests for OpenRouter AI integration- python-dotenv for environment variablesKey Functionality:1. File Upload & Parsing:   - Handle PDF, CSV, XLSX, and TXT    files.   - For PDFs, extract text from up    to 10 pages using pypdf.   - Use regex to extract numerical    values and line descriptions from    raw text.   - Implement robust normalization    to map columns to standard metrics    (revenue, expenses, assets,    liabilities, cash, netincome).2. AI Data Extraction & Analysis:   - Integrate with OpenRouter API    (model: openrouter/free).   - Implement a fallback "AI    Extraction" step: If standard    parsing fails to find data, use    the AI to scan the text for    financial synonyms (e.g.,    'turnover' for revenue, 'operating    costs' for expenses).   - Implement a "JSON Cleaning"    layer that handles malformed AI    responses, removes markdown code    blocks, and uses regex fallbacks    to extract metrics if JSON parsing    fails.   - Generate AI metadata including a    report title, summary, key    findings, and specific figures    found in the text.3. Financial Pipeline:   - Calculate liquidity,    profitability, and leverage ratios.   - Generate 6-month forecasts for    revenue and expenses using    Exponential Smoothing and Random    Forest models.   - Implement anomaly detection for    cash flow.4. API Endpoints:   - POST /upload-analyze: Accepts a    file and userId, returns full    analysis.   - POST /manual-entry: Accepts    manual JSON data for analysis.   - GET /analysis: Returns stored or    sample analysis data.   - POST /chat: A financial    assistant chatbot using OpenRouter    with full context of the analysis.5. Error Handling & UI Support:   - Include a 'debug' field in the    analysis output tracking    extraction_method and text_preview    length.   - Provide clear warnings in the    summary if no significant figures    are detected.Required Environment Variables:- OPENROUTER_API_KEY- OPENROUTER_MODEL (default: openrouter/free)
+Steps to setup on Replit
+Create a New Repl: Select "Python" or "Flask" as the template.
+Paste the Prompt: If you are using Replit Agent, paste the prompt above. If not, create an app.py and requirements.txt and use the prompt to guide your code generation.
+Secrets Configuration: In the Replit "Secrets" (Environment Variables) tab, add:
+OPENROUTER_API_KEY: Your OpenRouter API key.
+OPENROUTER_MODEL: openrouter/free (or your preferred model).
+Dependencies: Ensure your requirements.txt includes:
+text
+
+
+
+flaskflask-corspandasnumpyrequestsscikit-learnstatsmodelsopenpyxlpypdfpython-dotenvshap
+This will give you a standalone version of the app.py logic we've been working on, complete with the improved parsing and AI extraction fallbacks.
+
+Updated Todo List
+
+ Investigate and fix empty AI analysis results and missing figures
+ Debug document parsing for all file types
+ Improve AI response handling and timeouts
+ Draft Replit replication prompt
+Completed
+51%

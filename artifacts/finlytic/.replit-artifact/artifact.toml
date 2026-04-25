@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "Finlytic"
+version = "1.0.0"
+id = "artifacts/finlytic"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 23568
+
+[services.development]
+run = "pnpm --filter @workspace/finlytic run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/finlytic", "run", "build" ]
+publicDir = "artifacts/finlytic/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "23568"
+BASE_PATH = "/"
