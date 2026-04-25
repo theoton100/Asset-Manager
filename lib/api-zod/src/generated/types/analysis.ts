@@ -21,6 +21,9 @@ export interface Analysis {
   timeSeries: TimeSeries[];
   forecasts: Forecast[];
   insights: string[];
+  tags: string[];
+  warnings: string[];
+  forecastHorizon: number;
   rawTextPreview: string;
   createdAt: Date;
 }

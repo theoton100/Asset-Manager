@@ -12,6 +12,7 @@ export type KeyMetric = {
   value: number;
   unit?: string | null;
   change?: number | null;
+  confidence?: number | null;
 };
 
 export type SeriesPoint = { period: string; value: number };
@@ -48,6 +49,9 @@ export const analysesTable = pgTable("analyses", {
   timeSeries: jsonb("time_series").$type<TimeSeries[]>().notNull().default([]),
   forecasts: jsonb("forecasts").$type<Forecast[]>().notNull().default([]),
   insights: jsonb("insights").$type<string[]>().notNull().default([]),
+  tags: jsonb("tags").$type<string[]>().notNull().default([]),
+  warnings: jsonb("warnings").$type<string[]>().notNull().default([]),
+  forecastHorizon: integer("forecast_horizon").notNull().default(6),
   rawTextPreview: text("raw_text_preview").notNull().default(""),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()

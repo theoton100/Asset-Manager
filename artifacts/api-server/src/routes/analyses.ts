@@ -11,6 +11,8 @@ import {
   ChatWithAnalysisParams,
   ChatWithAnalysisBody,
   ChatWithAnalysisResponse,
+  UpdateAnalysisTagsBody,
+  RegenerateForecastBody,
 } from "@workspace/api-zod";
 import { parseUploadedFile } from "../lib/parseFile";
 import { extractAnalysis, buildForecasts } from "../lib/aiExtract";
@@ -51,9 +53,18 @@ function toFullItem(a: typeof analysesTable.$inferSelect) {
     timeSeries: a.timeSeries,
     forecasts: a.forecasts,
     insights: a.insights,
+    tags: a.tags ?? [],
+    warnings: a.warnings ?? [],
+    forecastHorizon: a.forecastHorizon ?? 6,
     rawTextPreview: a.rawTextPreview,
     createdAt: a.createdAt,
   };
+}
+
+function clampHorizon(raw: unknown): number {
+  const n = Number(raw);
+  if (!Number.isFinite(n) || n <= 0) return 6;
+  return Math.min(24, Math.max(1, Math.floor(n)));
 }
 
 router.get("/analyses", async (_req, res): Promise<void> => {
@@ -103,12 +114,7 @@ router.post(
       return;
     }
 
-    const horizonRaw = req.body?.horizon;
-    const horizon = (() => {
-      const n = Number(horizonRaw);
-      if (!Number.isFinite(n) || n <= 0) return 6;
-      return Math.min(24, Math.floor(n));
-    })();
+    const horizon = clampHorizon(req.body?.horizon);
 
     const { originalname, mimetype, size, buffer } = req.file;
 
@@ -165,6 +171,9 @@ router.post(
         timeSeries: extraction.timeSeries,
         forecasts,
         insights: extraction.insights,
+        tags: [],
+        warnings: parsed.warnings,
+        forecastHorizon: horizon,
         rawTextPreview: parsed.rawText.slice(0, MAX_PREVIEW),
       })
       .returning();
@@ -190,6 +199,144 @@ router.get("/analyses/:id", async (req, res): Promise<void> => {
     .where(eq(analysesTable.id, params.data.id));
   if (!row) {
     res.status(404).json({ error: "Analysis not found" });
+    return;
+  }
+  res.json(GetAnalysisResponse.parse(toFullItem(row)));
+});
+
+router.patch("/analyses/:id/tags", async (req, res): Promise<void> => {
+  const params = GetAnalysisParams.safeParse(req.params);
+  if (!params.success) {
+    res.status(400).json({ error: params.error.message });
+    return;
+  }
+  const body = UpdateAnalysisTagsBody.safeParse(req.body);
+  if (!body.success) {
+    res.status(400).json({ error: body.error.message });
+    return;
+  }
+  // Normalize: trim, dedupe (case-insensitive), drop blanks, max 10 tags x 32 chars
+  const seen = new Set<string>();
+  const normalized: string[] = [];
+  for (const raw of body.data.tags) {
+    const t = String(raw).trim().slice(0, 32);
+    if (!t) continue;
+    const key = t.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    normalized.push(t);
+    if (normalized.length >= 10) break;
+  }
+  const [row] = await db
+    .update(analysesTable)
+    .set({ tags: normalized })
+    .where(eq(analysesTable.id, params.data.id))
+    .returning();
+  if (!row) {
+    res.status(404).json({ error: "Analysis not found" });
+    return;
+  }
+  res.json(GetAnalysisResponse.parse(toFullItem(row)));
+});
+
+router.post("/analyses/:id/forecast", async (req, res): Promise<void> => {
+  const params = GetAnalysisParams.safeParse(req.params);
+  if (!params.success) {
+    res.status(400).json({ error: params.error.message });
+    return;
+  }
+  const body = RegenerateForecastBody.safeParse(req.body);
+  if (!body.success) {
+    res.status(400).json({ error: body.error.message });
+    return;
+  }
+  const horizon = clampHorizon(body.data.horizon);
+
+  const [existing] = await db
+    .select()
+    .from(analysesTable)
+    .where(eq(analysesTable.id, params.data.id));
+  if (!existing) {
+    res.status(404).json({ error: "Analysis not found" });
+    return;
+  }
+
+  const forecasts = buildForecasts(existing.timeSeries ?? [], horizon);
+
+  const [row] = await db
+    .update(analysesTable)
+    .set({ forecasts, forecastHorizon: horizon })
+    .where(eq(analysesTable.id, params.data.id))
+    .returning();
+  if (!row) {
+    res.status(500).json({ error: "Failed to update forecast" });
+    return;
+  }
+  res.json(GetAnalysisResponse.parse(toFullItem(row)));
+});
+
+router.post("/analyses/:id/reanalyze", async (req, res): Promise<void> => {
+  const params = GetAnalysisParams.safeParse(req.params);
+  if (!params.success) {
+    res.status(400).json({ error: params.error.message });
+    return;
+  }
+
+  const [existing] = await db
+    .select()
+    .from(analysesTable)
+    .where(eq(analysesTable.id, params.data.id));
+  if (!existing) {
+    res.status(404).json({ error: "Analysis not found" });
+    return;
+  }
+
+  if (!existing.rawTextPreview || existing.rawTextPreview.trim().length === 0) {
+    res.status(400).json({
+      error:
+        "No source text is stored for this analysis, so it cannot be re-analyzed.",
+    });
+    return;
+  }
+
+  let extraction;
+  try {
+    extraction = await extractAnalysis(
+      existing.filename,
+      existing.fileType,
+      existing.rawTextPreview,
+      req.log,
+    );
+  } catch (err) {
+    req.log.error({ err }, "Re-analyze failed");
+    res.status(502).json({
+      error:
+        err instanceof Error
+          ? `AI analysis failed: ${err.message}`
+          : "AI analysis failed",
+    });
+    return;
+  }
+
+  const horizon = existing.forecastHorizon ?? 6;
+  const forecasts = buildForecasts(extraction.timeSeries, horizon);
+
+  const [row] = await db
+    .update(analysesTable)
+    .set({
+      title: extraction.title,
+      summary: extraction.summary,
+      sentiment: extraction.sentiment,
+      keyMetrics: extraction.keyMetrics,
+      timeSeries: extraction.timeSeries,
+      forecasts,
+      insights: extraction.insights,
+    })
+    .where(eq(analysesTable.id, params.data.id))
+    .returning();
+
+  if (!row) {
+    res.status(500).json({ error: "Failed to update analysis" });
     return;
   }
   res.json(GetAnalysisResponse.parse(toFullItem(row)));

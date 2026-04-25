@@ -72,6 +72,10 @@ export const GetAnalysisResponse = zod.object({
         .number()
         .nullish()
         .describe("Period-over-period change as a fraction (e.g. 0.12 = +12%)"),
+      confidence: zod
+        .number()
+        .nullish()
+        .describe("Model confidence in this metric, 0..1"),
     }),
   ),
   timeSeries: zod.array(
@@ -117,6 +121,9 @@ export const GetAnalysisResponse = zod.object({
     }),
   ),
   insights: zod.array(zod.string()),
+  tags: zod.array(zod.string()),
+  warnings: zod.array(zod.string()),
+  forecastHorizon: zod.number(),
   rawTextPreview: zod.string(),
   createdAt: zod.coerce.date(),
 });
@@ -155,6 +162,256 @@ export const GetAnalysesStatsResponse = zod.object({
       createdAt: zod.coerce.date(),
     }),
   ),
+});
+
+/**
+ * @summary Replace the tag list on an analysis
+ */
+export const UpdateAnalysisTagsParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const UpdateAnalysisTagsBody = zod.object({
+  tags: zod.array(zod.string()),
+});
+
+export const UpdateAnalysisTagsResponse = zod.object({
+  id: zod.number(),
+  filename: zod.string(),
+  fileType: zod.string(),
+  fileSize: zod.number(),
+  title: zod.string(),
+  summary: zod.string(),
+  sentiment: zod.string(),
+  keyMetrics: zod.array(
+    zod.object({
+      label: zod.string(),
+      value: zod.number(),
+      unit: zod.string().nullish(),
+      change: zod
+        .number()
+        .nullish()
+        .describe("Period-over-period change as a fraction (e.g. 0.12 = +12%)"),
+      confidence: zod
+        .number()
+        .nullish()
+        .describe("Model confidence in this metric, 0..1"),
+    }),
+  ),
+  timeSeries: zod.array(
+    zod.object({
+      label: zod.string(),
+      unit: zod.string().nullish(),
+      points: zod.array(
+        zod.object({
+          period: zod
+            .string()
+            .describe(
+              'Time bucket label (e.g. \"Q1 2024\", \"Jan\", \"2023\")',
+            ),
+          value: zod.number(),
+        }),
+      ),
+    }),
+  ),
+  forecasts: zod.array(
+    zod.object({
+      label: zod.string(),
+      method: zod
+        .string()
+        .describe('Forecasting method used (e.g. \"linear-regression\")'),
+      history: zod.array(
+        zod.object({
+          period: zod
+            .string()
+            .describe(
+              'Time bucket label (e.g. \"Q1 2024\", \"Jan\", \"2023\")',
+            ),
+          value: zod.number(),
+        }),
+      ),
+      projection: zod.array(
+        zod.object({
+          period: zod.string(),
+          value: zod.number(),
+          lower: zod.number(),
+          upper: zod.number(),
+        }),
+      ),
+    }),
+  ),
+  insights: zod.array(zod.string()),
+  tags: zod.array(zod.string()),
+  warnings: zod.array(zod.string()),
+  forecastHorizon: zod.number(),
+  rawTextPreview: zod.string(),
+  createdAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Recompute forecasts for an analysis at a different horizon
+ */
+export const RegenerateForecastParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const regenerateForecastBodyHorizonMax = 24;
+
+export const RegenerateForecastBody = zod.object({
+  horizon: zod.number().min(1).max(regenerateForecastBodyHorizonMax),
+});
+
+export const RegenerateForecastResponse = zod.object({
+  id: zod.number(),
+  filename: zod.string(),
+  fileType: zod.string(),
+  fileSize: zod.number(),
+  title: zod.string(),
+  summary: zod.string(),
+  sentiment: zod.string(),
+  keyMetrics: zod.array(
+    zod.object({
+      label: zod.string(),
+      value: zod.number(),
+      unit: zod.string().nullish(),
+      change: zod
+        .number()
+        .nullish()
+        .describe("Period-over-period change as a fraction (e.g. 0.12 = +12%)"),
+      confidence: zod
+        .number()
+        .nullish()
+        .describe("Model confidence in this metric, 0..1"),
+    }),
+  ),
+  timeSeries: zod.array(
+    zod.object({
+      label: zod.string(),
+      unit: zod.string().nullish(),
+      points: zod.array(
+        zod.object({
+          period: zod
+            .string()
+            .describe(
+              'Time bucket label (e.g. \"Q1 2024\", \"Jan\", \"2023\")',
+            ),
+          value: zod.number(),
+        }),
+      ),
+    }),
+  ),
+  forecasts: zod.array(
+    zod.object({
+      label: zod.string(),
+      method: zod
+        .string()
+        .describe('Forecasting method used (e.g. \"linear-regression\")'),
+      history: zod.array(
+        zod.object({
+          period: zod
+            .string()
+            .describe(
+              'Time bucket label (e.g. \"Q1 2024\", \"Jan\", \"2023\")',
+            ),
+          value: zod.number(),
+        }),
+      ),
+      projection: zod.array(
+        zod.object({
+          period: zod.string(),
+          value: zod.number(),
+          lower: zod.number(),
+          upper: zod.number(),
+        }),
+      ),
+    }),
+  ),
+  insights: zod.array(zod.string()),
+  tags: zod.array(zod.string()),
+  warnings: zod.array(zod.string()),
+  forecastHorizon: zod.number(),
+  rawTextPreview: zod.string(),
+  createdAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Re-run AI extraction and forecasting on the stored source text
+ */
+export const ReanalyzeAnalysisParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const ReanalyzeAnalysisResponse = zod.object({
+  id: zod.number(),
+  filename: zod.string(),
+  fileType: zod.string(),
+  fileSize: zod.number(),
+  title: zod.string(),
+  summary: zod.string(),
+  sentiment: zod.string(),
+  keyMetrics: zod.array(
+    zod.object({
+      label: zod.string(),
+      value: zod.number(),
+      unit: zod.string().nullish(),
+      change: zod
+        .number()
+        .nullish()
+        .describe("Period-over-period change as a fraction (e.g. 0.12 = +12%)"),
+      confidence: zod
+        .number()
+        .nullish()
+        .describe("Model confidence in this metric, 0..1"),
+    }),
+  ),
+  timeSeries: zod.array(
+    zod.object({
+      label: zod.string(),
+      unit: zod.string().nullish(),
+      points: zod.array(
+        zod.object({
+          period: zod
+            .string()
+            .describe(
+              'Time bucket label (e.g. \"Q1 2024\", \"Jan\", \"2023\")',
+            ),
+          value: zod.number(),
+        }),
+      ),
+    }),
+  ),
+  forecasts: zod.array(
+    zod.object({
+      label: zod.string(),
+      method: zod
+        .string()
+        .describe('Forecasting method used (e.g. \"linear-regression\")'),
+      history: zod.array(
+        zod.object({
+          period: zod
+            .string()
+            .describe(
+              'Time bucket label (e.g. \"Q1 2024\", \"Jan\", \"2023\")',
+            ),
+          value: zod.number(),
+        }),
+      ),
+      projection: zod.array(
+        zod.object({
+          period: zod.string(),
+          value: zod.number(),
+          lower: zod.number(),
+          upper: zod.number(),
+        }),
+      ),
+    }),
+  ),
+  insights: zod.array(zod.string()),
+  tags: zod.array(zod.string()),
+  warnings: zod.array(zod.string()),
+  forecastHorizon: zod.number(),
+  rawTextPreview: zod.string(),
+  createdAt: zod.coerce.date(),
 });
 
 /**

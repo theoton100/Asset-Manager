@@ -36,7 +36,8 @@ The JSON must conform to this schema:
       "label": string,
       "value": number,
       "unit": string | null,  // ISO currency code ("GHS","USD","EUR","GBP","NGN","ZAR"), or "%", "units", null if unitless
-      "change": number | null // period-over-period as a fraction (0.12 = +12%)
+      "change": number | null,// period-over-period as a fraction (0.12 = +12%)
+      "confidence": number    // 0..1 — how confident you are in this exact figure
     }
   ],
   "time_series": [            // every multi-period series you can find
@@ -58,6 +59,9 @@ Rules:
 - If the document is not financial in nature, still extract any numeric
   series and metrics you can, and set sentiment to "neutral".
 - Never hallucinate figures that are not supported by the document.
+- Confidence: 1.0 = the number appears verbatim in the document and is
+  unambiguous; 0.7 = the number is implied by adjacent figures; 0.4 or
+  lower = you had to estimate. Always include a confidence value.
 
 Currency detection — VERY IMPORTANT:
 - Detect the actual currency from the document. Look for symbols and
@@ -140,7 +144,11 @@ function normalizeExtraction(raw: unknown): AiExtraction {
         ? mm.unit.trim()
         : null;
     const change = coerceNumber(mm.change);
-    keyMetrics.push({ label, value, unit, change });
+    let confidence = coerceNumber(mm.confidence);
+    if (confidence !== null) {
+      confidence = Math.max(0, Math.min(1, confidence));
+    }
+    keyMetrics.push({ label, value, unit, change, confidence });
   }
 
   const seriesRaw = Array.isArray(obj.time_series)
