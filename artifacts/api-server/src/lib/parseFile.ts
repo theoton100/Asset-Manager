@@ -1,5 +1,6 @@
 import Papa from "papaparse";
 import * as XLSX from "xlsx";
+import mammoth from "mammoth";
 import { createRequire } from "node:module";
 
 const require = createRequire(import.meta.url);
@@ -32,6 +33,11 @@ async function parsePdf(buffer: Buffer): Promise<string> {
   ) => Promise<{ text: string }>;
   const result = await pdfParse(buffer, { max: MAX_PDF_PAGES });
   return result.text ?? "";
+}
+
+async function parseDocx(buffer: Buffer): Promise<string> {
+  const result = await mammoth.extractRawText({ buffer });
+  return result.value ?? "";
 }
 
 function parseCsv(buffer: Buffer): { rows: string[][]; text: string } {
@@ -76,6 +82,17 @@ export async function parseUploadedFile(
   if (ext === "pdf" || mimetype === "application/pdf") {
     const text = await parsePdf(buffer);
     return { fileType: "pdf", rawText: clip(text), tabular: null };
+  }
+
+  if (
+    ext === "docx" ||
+    ext === "doc" ||
+    mimetype ===
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
+    mimetype === "application/msword"
+  ) {
+    const text = await parseDocx(buffer);
+    return { fileType: "docx", rawText: clip(text), tabular: null };
   }
 
   if (ext === "csv" || mimetype === "text/csv") {

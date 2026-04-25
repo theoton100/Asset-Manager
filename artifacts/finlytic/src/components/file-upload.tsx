@@ -10,6 +10,8 @@ import { cn } from "@/lib/utils";
 
 const ALLOWED_TYPES = [
   "application/pdf",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/msword",
   "text/csv",
   "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
   "text/plain"
@@ -49,7 +51,7 @@ export function FileUpload() {
 
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       const file = e.dataTransfer.files[0];
-      if (ALLOWED_TYPES.includes(file.type) || file.name.match(/\.(pdf|csv|xlsx|txt)$/i)) {
+      if (ALLOWED_TYPES.includes(file.type) || file.name.match(/\.(pdf|docx?|csv|xlsx|txt)$/i)) {
         setSelectedFile(file);
       }
     }
@@ -96,7 +98,7 @@ export function FileUpload() {
         <input
           ref={inputRef}
           type="file"
-          accept=".pdf,.csv,.xlsx,.txt"
+          accept=".pdf,.docx,.doc,.csv,.xlsx,.txt"
           onChange={handleChange}
           className="hidden"
         />
@@ -157,7 +159,7 @@ export function FileUpload() {
               </p>
             </div>
             <div className="text-xs text-muted-foreground/80 mt-2">
-              Supports PDF, CSV, XLSX, and TXT
+              Supports PDF, Word, CSV, XLSX, and TXT
             </div>
             <Button
               variant="outline"
