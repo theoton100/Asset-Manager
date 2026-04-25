@@ -8,9 +8,13 @@ import {
   GetAnalysisResponse,
   ListAnalysesResponse,
   GetAnalysesStatsResponse,
+  ChatWithAnalysisParams,
+  ChatWithAnalysisBody,
+  ChatWithAnalysisResponse,
 } from "@workspace/api-zod";
 import { parseUploadedFile } from "../lib/parseFile";
 import { extractAnalysis, buildForecasts } from "../lib/aiExtract";
+import { chatAboutAnalysis } from "../lib/chat";
 
 const router: IRouter = Router();
 
@@ -189,6 +193,37 @@ router.get("/analyses/:id", async (req, res): Promise<void> => {
     return;
   }
   res.json(GetAnalysisResponse.parse(toFullItem(row)));
+});
+
+router.post("/analyses/:id/chat", async (req, res): Promise<void> => {
+  const params = ChatWithAnalysisParams.safeParse(req.params);
+  if (!params.success) {
+    res.status(400).json({ error: params.error.message });
+    return;
+  }
+  const body = ChatWithAnalysisBody.safeParse(req.body);
+  if (!body.success) {
+    res.status(400).json({ error: body.error.message });
+    return;
+  }
+  const [row] = await db
+    .select()
+    .from(analysesTable)
+    .where(eq(analysesTable.id, params.data.id));
+  if (!row) {
+    res.status(404).json({ error: "Analysis not found" });
+    return;
+  }
+  try {
+    const reply = await chatAboutAnalysis(row, body.data.messages, req.log);
+    res.json(ChatWithAnalysisResponse.parse({ reply }));
+  } catch (err) {
+    req.log.error({ err }, "Chat failed");
+    res.status(502).json({
+      error:
+        err instanceof Error ? `Chat failed: ${err.message}` : "Chat failed",
+    });
+  }
 });
 
 router.delete("/analyses/:id", async (req, res): Promise<void> => {

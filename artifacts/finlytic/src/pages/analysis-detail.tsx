@@ -1,4 +1,5 @@
 import { useGetAnalysis, useDeleteAnalysis, getListAnalysesQueryKey, getGetAnalysesStatsQueryKey } from "@workspace/api-client-react";
+import { AnalysisChat } from "@/components/analysis-chat";
 import { useParams, useLocation } from "wouter";
 import { Layout } from "@/components/layout";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -383,6 +384,7 @@ export function AnalysisDetail() {
         </Collapsible>
       )}
 
+      <AnalysisChat analysisId={analysis.id} analysisTitle={analysis.title} />
     </Layout>
   );
 }
