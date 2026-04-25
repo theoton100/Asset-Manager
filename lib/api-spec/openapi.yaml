@@ -138,6 +138,40 @@ paths:
               schema:
                 $ref: "#/components/schemas/AnalysesStats"
 
+  /analyses/{id}/chat:
+    post:
+      operationId: chatWithAnalysis
+      tags: [analyses]
+      summary: Ask the AI a question about a specific analysis
+      description: |
+        Sends the conversation so far (with the analysis context attached
+        server-side) and returns the assistant's next reply.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChatRequest"
+      responses:
+        "200":
+          description: Assistant reply
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChatResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
 components:
   schemas:
     HealthStatus:
@@ -337,3 +371,29 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/AnalysisSummary"
+
+    ChatMessage:
+      type: object
+      required: [role, content]
+      properties:
+        role:
+          type: string
+          enum: [user, assistant]
+        content:
+          type: string
+
+    ChatRequest:
+      type: object
+      required: [messages]
+      properties:
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/ChatMessage"
+
+    ChatResponse:
+      type: object
+      required: [reply]
+      properties:
+        reply:
+          type: string

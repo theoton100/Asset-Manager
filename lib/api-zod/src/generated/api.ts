@@ -156,3 +156,26 @@ export const GetAnalysesStatsResponse = zod.object({
     }),
   ),
 });
+
+/**
+ * Sends the conversation so far (with the analysis context attached
+server-side) and returns the assistant's next reply.
+
+ * @summary Ask the AI a question about a specific analysis
+ */
+export const ChatWithAnalysisParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const ChatWithAnalysisBody = zod.object({
+  messages: zod.array(
+    zod.object({
+      role: zod.enum(["user", "assistant"]),
+      content: zod.string(),
+    }),
+  ),
+});
+
+export const ChatWithAnalysisResponse = zod.object({
+  reply: zod.string(),
+});
