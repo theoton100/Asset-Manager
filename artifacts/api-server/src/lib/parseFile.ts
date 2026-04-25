@@ -9,6 +9,7 @@ export type ParsedFile = {
   fileType: string;
   rawText: string;
   tabular: string[][] | null;
+  warnings: string[];
 };
 
 const MAX_PDF_PAGES = 10;
@@ -79,9 +80,17 @@ export async function parseUploadedFile(
   const lower = filename.toLowerCase();
   const ext = lower.includes(".") ? lower.split(".").pop()! : "";
 
+  const warnings: string[] = [];
+
   if (ext === "pdf" || mimetype === "application/pdf") {
     const text = await parsePdf(buffer);
-    return { fileType: "pdf", rawText: clip(text), tabular: null };
+    // Detect image-based / scanned PDFs: lots of bytes, almost no text.
+    if (text.trim().length < 100 && buffer.length > 50_000) {
+      warnings.push(
+        "This PDF appears to be image-based (a scan or photo). Very little text could be extracted, so the analysis may be incomplete. Try exporting it as a searchable PDF, or paste the text contents directly.",
+      );
+    }
+    return { fileType: "pdf", rawText: clip(text), tabular: null, warnings };
   }
 
   if (
@@ -92,12 +101,12 @@ export async function parseUploadedFile(
     mimetype === "application/msword"
   ) {
     const text = await parseDocx(buffer);
-    return { fileType: "docx", rawText: clip(text), tabular: null };
+    return { fileType: "docx", rawText: clip(text), tabular: null, warnings };
   }
 
   if (ext === "csv" || mimetype === "text/csv") {
     const { rows, text } = parseCsv(buffer);
-    return { fileType: "csv", rawText: clip(text), tabular: rows };
+    return { fileType: "csv", rawText: clip(text), tabular: rows, warnings };
   }
 
   if (
@@ -107,7 +116,12 @@ export async function parseUploadedFile(
     mimetype.includes("excel")
   ) {
     const { rows, text } = parseXlsx(buffer);
-    return { fileType: ext || "xlsx", rawText: clip(text), tabular: rows };
+    return {
+      fileType: ext || "xlsx",
+      rawText: clip(text),
+      tabular: rows,
+      warnings,
+    };
   }
 
   if (ext === "txt" || mimetype.startsWith("text/")) {
@@ -115,6 +129,7 @@ export async function parseUploadedFile(
       fileType: "txt",
       rawText: clip(buffer.toString("utf-8")),
       tabular: null,
+      warnings,
     };
   }
 
@@ -123,5 +138,6 @@ export async function parseUploadedFile(
     fileType: ext || "unknown",
     rawText: clip(buffer.toString("utf-8")),
     tabular: null,
+    warnings,
   };
 }

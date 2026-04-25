@@ -16,4 +16,9 @@ export interface KeyMetric {
    * @nullable
    */
   change?: number | null;
+  /**
+   * Model confidence in this metric, 0..1
+   * @nullable
+   */
+  confidence?: number | null;
 }

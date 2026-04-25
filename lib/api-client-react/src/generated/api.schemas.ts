@@ -23,6 +23,11 @@ export interface KeyMetric {
    * @nullable
    */
   change?: number | null;
+  /**
+   * Model confidence in this metric, 0..1
+   * @nullable
+   */
+  confidence?: number | null;
 }
 
 export interface SeriesPoint {
@@ -77,6 +82,9 @@ export interface Analysis {
   timeSeries: TimeSeries[];
   forecasts: Forecast[];
   insights: string[];
+  tags: string[];
+  warnings: string[];
+  forecastHorizon: number;
   rawTextPreview: string;
   createdAt: string;
 }
@@ -120,4 +128,16 @@ export type UploadAnalysisBody = {
   file: Blob;
   /** Number of forecast periods to generate (default 6) */
   horizon?: number;
+};
+
+export type UpdateAnalysisTagsBody = {
+  tags: string[];
+};
+
+export type RegenerateForecastBody = {
+  /**
+   * @minimum 1
+   * @maximum 24
+   */
+  horizon: number;
 };

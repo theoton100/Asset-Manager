@@ -24,6 +24,8 @@ import type {
   ChatResponse,
   ErrorResponse,
   HealthStatus,
+  RegenerateForecastBody,
+  UpdateAnalysisTagsBody,
   UploadAnalysisBody,
 } from "./api.schemas";
 
@@ -529,6 +531,264 @@ export function useGetAnalysesStats<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+/**
+ * @summary Replace the tag list on an analysis
+ */
+export const getUpdateAnalysisTagsUrl = (id: number) => {
+  return `/api/analyses/${id}/tags`;
+};
+
+export const updateAnalysisTags = async (
+  id: number,
+  updateAnalysisTagsBody: UpdateAnalysisTagsBody,
+  options?: RequestInit,
+): Promise<Analysis> => {
+  return customFetch<Analysis>(getUpdateAnalysisTagsUrl(id), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateAnalysisTagsBody),
+  });
+};
+
+export const getUpdateAnalysisTagsMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateAnalysisTags>>,
+    TError,
+    { id: number; data: BodyType<UpdateAnalysisTagsBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateAnalysisTags>>,
+  TError,
+  { id: number; data: BodyType<UpdateAnalysisTagsBody> },
+  TContext
+> => {
+  const mutationKey = ["updateAnalysisTags"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateAnalysisTags>>,
+    { id: number; data: BodyType<UpdateAnalysisTagsBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return updateAnalysisTags(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateAnalysisTagsMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateAnalysisTags>>
+>;
+export type UpdateAnalysisTagsMutationBody = BodyType<UpdateAnalysisTagsBody>;
+export type UpdateAnalysisTagsMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Replace the tag list on an analysis
+ */
+export const useUpdateAnalysisTags = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateAnalysisTags>>,
+    TError,
+    { id: number; data: BodyType<UpdateAnalysisTagsBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateAnalysisTags>>,
+  TError,
+  { id: number; data: BodyType<UpdateAnalysisTagsBody> },
+  TContext
+> => {
+  return useMutation(getUpdateAnalysisTagsMutationOptions(options));
+};
+
+/**
+ * @summary Recompute forecasts for an analysis at a different horizon
+ */
+export const getRegenerateForecastUrl = (id: number) => {
+  return `/api/analyses/${id}/forecast`;
+};
+
+export const regenerateForecast = async (
+  id: number,
+  regenerateForecastBody: RegenerateForecastBody,
+  options?: RequestInit,
+): Promise<Analysis> => {
+  return customFetch<Analysis>(getRegenerateForecastUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(regenerateForecastBody),
+  });
+};
+
+export const getRegenerateForecastMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof regenerateForecast>>,
+    TError,
+    { id: number; data: BodyType<RegenerateForecastBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof regenerateForecast>>,
+  TError,
+  { id: number; data: BodyType<RegenerateForecastBody> },
+  TContext
+> => {
+  const mutationKey = ["regenerateForecast"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof regenerateForecast>>,
+    { id: number; data: BodyType<RegenerateForecastBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return regenerateForecast(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type RegenerateForecastMutationResult = NonNullable<
+  Awaited<ReturnType<typeof regenerateForecast>>
+>;
+export type RegenerateForecastMutationBody = BodyType<RegenerateForecastBody>;
+export type RegenerateForecastMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Recompute forecasts for an analysis at a different horizon
+ */
+export const useRegenerateForecast = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof regenerateForecast>>,
+    TError,
+    { id: number; data: BodyType<RegenerateForecastBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof regenerateForecast>>,
+  TError,
+  { id: number; data: BodyType<RegenerateForecastBody> },
+  TContext
+> => {
+  return useMutation(getRegenerateForecastMutationOptions(options));
+};
+
+/**
+ * @summary Re-run AI extraction and forecasting on the stored source text
+ */
+export const getReanalyzeAnalysisUrl = (id: number) => {
+  return `/api/analyses/${id}/reanalyze`;
+};
+
+export const reanalyzeAnalysis = async (
+  id: number,
+  options?: RequestInit,
+): Promise<Analysis> => {
+  return customFetch<Analysis>(getReanalyzeAnalysisUrl(id), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getReanalyzeAnalysisMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof reanalyzeAnalysis>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof reanalyzeAnalysis>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["reanalyzeAnalysis"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof reanalyzeAnalysis>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return reanalyzeAnalysis(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ReanalyzeAnalysisMutationResult = NonNullable<
+  Awaited<ReturnType<typeof reanalyzeAnalysis>>
+>;
+
+export type ReanalyzeAnalysisMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Re-run AI extraction and forecasting on the stored source text
+ */
+export const useReanalyzeAnalysis = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof reanalyzeAnalysis>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof reanalyzeAnalysis>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getReanalyzeAnalysisMutationOptions(options));
+};
 
 /**
  * Sends the conversation so far (with the analysis context attached

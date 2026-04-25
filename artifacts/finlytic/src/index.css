@@ -358,3 +358,39 @@
     inset: -1px;
   }
 }
+
+/* Print stylesheet — used by the "Export as PDF" button */
+@media print {
+  @page {
+    margin: 0.5in;
+  }
+  html, body {
+    background: white !important;
+    color: black !important;
+  }
+  /* Force light theme for printing */
+  .dark {
+    --background: 0 0% 100%;
+    --foreground: 220 40% 12%;
+    --border: 220 15% 85%;
+    --card: 0 0% 100%;
+    --card-foreground: 220 40% 12%;
+    --muted: 220 15% 96%;
+    --muted-foreground: 220 10% 35%;
+    --primary: 173 80% 30%;
+    --primary-foreground: 0 0% 100%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 40% 12%;
+  }
+  /* Reset shadows that look bad in print */
+  * {
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+  /* Avoid breaking cards across pages */
+  .print-avoid-break,
+  [class*="rounded"][class*="border"] {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+}

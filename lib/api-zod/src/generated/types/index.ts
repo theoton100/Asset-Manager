@@ -19,6 +19,8 @@ export * from "./forecast";
 export * from "./forecastPoint";
 export * from "./healthStatus";
 export * from "./keyMetric";
+export * from "./regenerateForecastBody";
 export * from "./seriesPoint";
 export * from "./timeSeries";
+export * from "./updateAnalysisTagsBody";
 export * from "./uploadAnalysisBody";

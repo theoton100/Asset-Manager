@@ -138,6 +138,105 @@ paths:
               schema:
                 $ref: "#/components/schemas/AnalysesStats"
 
+  /analyses/{id}/tags:
+    patch:
+      operationId: updateAnalysisTags
+      tags: [analyses]
+      summary: Replace the tag list on an analysis
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [tags]
+              properties:
+                tags:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        "200":
+          description: Updated analysis
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Analysis"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /analyses/{id}/forecast:
+    post:
+      operationId: regenerateForecast
+      tags: [analyses]
+      summary: Recompute forecasts for an analysis at a different horizon
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [horizon]
+              properties:
+                horizon:
+                  type: integer
+                  minimum: 1
+                  maximum: 24
+      responses:
+        "200":
+          description: Updated analysis
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Analysis"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /analyses/{id}/reanalyze:
+    post:
+      operationId: reanalyzeAnalysis
+      tags: [analyses]
+      summary: Re-run AI extraction and forecasting on the stored source text
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Updated analysis
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Analysis"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /analyses/{id}/chat:
     post:
       operationId: chatWithAnalysis
@@ -203,6 +302,9 @@ components:
         change:
           type: ["number", "null"]
           description: Period-over-period change as a fraction (e.g. 0.12 = +12%)
+        confidence:
+          type: ["number", "null"]
+          description: Model confidence in this metric, 0..1
 
     SeriesPoint:
       type: object
@@ -303,6 +405,9 @@ components:
         - timeSeries
         - forecasts
         - insights
+        - tags
+        - warnings
+        - forecastHorizon
         - rawTextPreview
         - createdAt
       properties:
@@ -336,6 +441,16 @@ components:
           type: array
           items:
             type: string
+        tags:
+          type: array
+          items:
+            type: string
+        warnings:
+          type: array
+          items:
+            type: string
+        forecastHorizon:
+          type: integer
         rawTextPreview:
           type: string
         createdAt:
