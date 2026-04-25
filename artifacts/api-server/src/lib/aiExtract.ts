@@ -35,7 +35,7 @@ The JSON must conform to this schema:
     {
       "label": string,
       "value": number,
-      "unit": string | null,  // "USD", "%", "units", null if unitless
+      "unit": string | null,  // ISO currency code ("GHS","USD","EUR","GBP","NGN","ZAR"), or "%", "units", null if unitless
       "change": number | null // period-over-period as a fraction (0.12 = +12%)
     }
   ],
@@ -57,7 +57,24 @@ Rules:
   or all "2021"). Order points chronologically.
 - If the document is not financial in nature, still extract any numeric
   series and metrics you can, and set sentiment to "neutral".
-- Never hallucinate figures that are not supported by the document.`;
+- Never hallucinate figures that are not supported by the document.
+
+Currency detection — VERY IMPORTANT:
+- Detect the actual currency from the document. Look for symbols and
+  codes anywhere in the text:
+  - "₵", "GH₵", "GHS", "GHC", "cedi", "cedis", "Ghana Cedi" -> "GHS"
+  - "$", "USD", "US$" -> "USD"
+  - "€", "EUR" -> "EUR"
+  - "£", "GBP" -> "GBP"
+  - "₦", "NGN", "naira" -> "NGN"
+  - "R", "ZAR", "rand" -> "ZAR"  (only when clearly a currency)
+  - "¥", "JPY", "yen" -> "JPY"
+  - "₹", "INR", "rupee", "rupees" -> "INR"
+  - "CFA", "XOF", "XAF" -> the matching code
+- Use the SAME currency code as the unit for every monetary metric and
+  every monetary time series in the document.
+- If no currency clue exists at all, set unit to null — DO NOT default
+  to "USD".`;
 
 function truncate(text: string, max: number): string {
   return text.length > max ? text.slice(0, max) : text;
